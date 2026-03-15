@@ -1,15 +1,17 @@
-// lib/llm/generateJson.ts
+import { traceable } from "langsmith/traceable";
 import { deepseek } from "@/lib/llm/deepseek";
 
-export async function generateJson<T>({
-  model = "deepseek-chat",
-  systemPrompt,
-  userPrompt,
-}: {
+type GenerateJsonParams = {
   model?: "deepseek-chat" | "deepseek-reasoner";
   systemPrompt: string;
   userPrompt: string;
-}): Promise<T> {
+};
+
+async function _generateJson<T>({
+  model = "deepseek-chat",
+  systemPrompt,
+  userPrompt,
+}: GenerateJsonParams): Promise<T> {
   const response = await deepseek.chat.completions.create({
     model,
     temperature: 0,
@@ -28,3 +30,10 @@ export async function generateJson<T>({
 
   return JSON.parse(content) as T;
 }
+
+type GenerateJsonFn = <T>(params: GenerateJsonParams) => Promise<T>;
+
+export const generateJson = traceable(_generateJson, {
+  name: "generate-json",
+  run_type: "llm",
+}) as GenerateJsonFn;

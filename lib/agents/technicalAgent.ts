@@ -1,4 +1,4 @@
-// lib/agents/technicalAgent.ts
+import { traceable } from "langsmith/traceable";
 import { SpecState } from "@/lib/types";
 import { generateJson } from "@/lib/llm/generateJson";
 
@@ -7,7 +7,7 @@ type TechnicalOutput = {
   dataEntities: string[];
 };
 
-export async function runTechnicalAgent(state: SpecState): Promise<SpecState> {
+async function _runTechnicalAgent(state: SpecState): Promise<SpecState> {
   const result = await generateJson<TechnicalOutput>({
     model: "deepseek-chat",
     systemPrompt: `
@@ -31,3 +31,8 @@ Return JSON with:
     dataEntities: result.dataEntities,
   };
 }
+
+export const runTechnicalAgent = traceable(_runTechnicalAgent, {
+  name: "technical-agent",
+  run_type: "chain",
+});

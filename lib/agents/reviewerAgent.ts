@@ -1,4 +1,4 @@
-// lib/agents/reviewerAgent.ts
+import { traceable } from "langsmith/traceable";
 import { SpecState } from "@/lib/types";
 import { generateJson } from "@/lib/llm/generateJson";
 
@@ -7,7 +7,7 @@ type ReviewerOutput = {
   reviewNotes: string[];
 };
 
-export async function runReviewerAgent(state: SpecState): Promise<SpecState> {
+async function _runReviewerAgent(state: SpecState): Promise<SpecState> {
   const result = await generateJson<ReviewerOutput>({
     model: "deepseek-reasoner",
     systemPrompt: `
@@ -31,3 +31,8 @@ Return JSON with:
     reviewNotes: result.reviewNotes,
   };
 }
+
+export const runReviewerAgent = traceable(_runReviewerAgent, {
+  name: "reviewer-agent",
+  run_type: "chain",
+});

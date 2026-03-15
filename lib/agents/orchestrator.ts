@@ -1,3 +1,4 @@
+import { traceable } from "langsmith/traceable";
 import { SpecState } from "@/lib/types";
 import { toMarkdown } from "@/lib/tools/exportTool";
 import {
@@ -11,13 +12,14 @@ import { runProductAgent } from "./productAgent";
 import { runTechnicalAgent } from "./technicalAgent";
 import { runReviewerAgent } from "./reviewerAgent";
 
-
-export async function runAnalysisPipeline(rawIdea: string) {
-
-    const project = await createProject({
+async function _runAnalysisPipeline(rawIdea: string) {
+  const project = await createProject({
     rawIdea,
     projectTitle: "Pending analysis",
-    finalJson: { rawIdea, status: "running" },
+    finalJson: {
+      rawIdea,
+      status: "running",
+    },
     markdownOutput: "",
   });
 
@@ -124,3 +126,8 @@ export async function runAnalysisPipeline(rawIdea: string) {
     markdown,
   };
 }
+
+export const runAnalysisPipeline = traceable(_runAnalysisPipeline, {
+  name: "analysis-pipeline",
+  run_type: "chain",
+});

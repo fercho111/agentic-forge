@@ -1,4 +1,4 @@
-// lib/agents/productAgent.ts
+import { traceable } from "langsmith/traceable";
 import { SpecState } from "@/lib/types";
 import { generateJson } from "@/lib/llm/generateJson";
 
@@ -7,7 +7,7 @@ type ProductOutput = {
   userStories: string[];
 };
 
-export async function runProductAgent(state: SpecState): Promise<SpecState> {
+async function _runProductAgent(state: SpecState): Promise<SpecState> {
   const result = await generateJson<ProductOutput>({
     model: "deepseek-chat",
     systemPrompt: `
@@ -31,3 +31,8 @@ Return JSON with:
     userStories: result.userStories,
   };
 }
+
+export const runProductAgent = traceable(_runProductAgent, {
+  name: "product-agent",
+  run_type: "chain",
+});

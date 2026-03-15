@@ -1,4 +1,4 @@
-// lib/agents/intakeAgent.ts
+import { traceable } from "langsmith/traceable";
 import { SpecState } from "@/lib/types";
 import { generateJson } from "@/lib/llm/generateJson";
 
@@ -8,7 +8,7 @@ type IntakeOutput = {
   targetUsers: string[];
 };
 
-export async function runIntakeAgent(rawIdea: string): Promise<SpecState> {
+async function _runIntakeAgent(rawIdea: string): Promise<SpecState> {
   const result = await generateJson<IntakeOutput>({
     model: "deepseek-chat",
     systemPrompt: `
@@ -34,3 +34,8 @@ Return JSON with:
     targetUsers: result.targetUsers,
   };
 }
+
+export const runIntakeAgent = traceable(_runIntakeAgent, {
+  name: "intake-agent",
+  run_type: "chain",
+});
