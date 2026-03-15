@@ -139,3 +139,34 @@ export async function logAgentRunEnd(params: {
 
   return asAgentRunRecord(row);
 }
+
+export async function updateProject(params: {
+  projectId: string;
+  projectTitle?: string;
+  finalJson: unknown;
+  markdownOutput?: string;
+}): Promise<ProjectRecord> {
+  const result = await sql`
+    UPDATE projects
+    SET
+      project_title = ${params.projectTitle ?? null},
+      final_json = ${JSON.stringify(params.finalJson)},
+      markdown_output = ${params.markdownOutput ?? null}
+    WHERE id = ${params.projectId}
+    RETURNING
+      id,
+      raw_idea,
+      project_title,
+      final_json,
+      markdown_output,
+      created_at;
+  `;
+
+  const row = result[0];
+
+  if (!row) {
+    throw new Error("Failed to update project: no row returned");
+  }
+
+  return row as ProjectRecord;
+}

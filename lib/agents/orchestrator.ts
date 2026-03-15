@@ -4,6 +4,7 @@ import {
   createProject,
   logAgentRunEnd,
   logAgentRunStart,
+  updateProject,
 } from "@/lib/tools/persistenceTool";
 import { runIntakeAgent } from "./intakeAgent";
 import { runProductAgent } from "./productAgent";
@@ -12,7 +13,16 @@ import { runReviewerAgent } from "./reviewerAgent";
 
 
 export async function runAnalysisPipeline(rawIdea: string) {
+
+    const project = await createProject({
+    rawIdea,
+    projectTitle: "Pending analysis",
+    finalJson: { rawIdea, status: "running" },
+    markdownOutput: "",
+  });
+
   const intakeRun = await logAgentRunStart({
+    projectId: project.id,
     agentName: "intake-agent",
   });
 
@@ -35,6 +45,7 @@ export async function runAnalysisPipeline(rawIdea: string) {
   }
 
   const productRun = await logAgentRunStart({
+    projectId: project.id,
     agentName: "product-agent",
   });
 
@@ -55,6 +66,7 @@ export async function runAnalysisPipeline(rawIdea: string) {
   }
 
   const technicalRun = await logAgentRunStart({
+    projectId: project.id,
     agentName: "technical-agent",
   });
 
@@ -76,6 +88,7 @@ export async function runAnalysisPipeline(rawIdea: string) {
   }
 
   const reviewerRun = await logAgentRunStart({
+    projectId: project.id,
     agentName: "reviewer-agent",
   });
 
@@ -98,15 +111,15 @@ export async function runAnalysisPipeline(rawIdea: string) {
 
   const markdown = toMarkdown(state);
 
-  const project = await createProject({
-    rawIdea,
+  const updatedProject = await updateProject({
+    projectId: project.id,
     projectTitle: state.projectTitle,
     finalJson: state,
     markdownOutput: markdown,
   });
 
   return {
-    projectId: project.id,
+    projectId: updatedProject.id,
     spec: state,
     markdown,
   };

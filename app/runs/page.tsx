@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 type AgentRun = {
   id: string;
   project_id: string | null;
+  project_title: string | null;
   agent_name: string;
   status: string;
   started_at: string;
@@ -17,16 +18,19 @@ type AgentRun = {
 async function getRuns(): Promise<AgentRun[]> {
   const runs = await sql`
     SELECT
-      id,
-      project_id,
-      agent_name,
-      status,
-      started_at,
-      ended_at,
-      duration_ms,
-      error_message
-    FROM agent_runs
-    ORDER BY started_at DESC
+      ar.id,
+      ar.project_id,
+      p.project_title,
+      ar.agent_name,
+      ar.status,
+      ar.started_at,
+      ar.ended_at,
+      ar.duration_ms,
+      ar.error_message
+    FROM agent_runs ar
+    LEFT JOIN projects p
+      ON ar.project_id = p.id
+    ORDER BY ar.started_at DESC
     LIMIT 50;
   `;
 
@@ -50,7 +54,7 @@ export default async function RunsPage() {
             href="/"
             className="rounded-md border bg-white px-4 py-2 text-sm shadow-sm text-gray-500"
           >
-            Back to app
+            Volver
           </Link>
         </div>
 
@@ -61,8 +65,8 @@ export default async function RunsPage() {
                 <th className="px-4 py-3">Agent</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Started</th>
-                <th className="px-4 py-3">Duration (ms)</th>
-                <th className="px-4 py-3">Project ID</th>
+                <th className="px-4 py-3">Duration (s)</th>
+                <th className="px-4 py-3">Project</th>
                 <th className="px-4 py-3">Error</th>
               </tr>
             </thead>
@@ -75,8 +79,12 @@ export default async function RunsPage() {
                     <td className="px-4 py-3">
                       {new Date(run.started_at).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3">{run.duration_ms ?? "-"}</td>
-                    <td className="px-4 py-3">{run.project_id ?? "-"}</td>
+                    <td className="px-4 py-3">
+                        {run.duration_ms != null ? (run.duration_ms / 1000).toFixed(2) : "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                    {run.project_title ?? run.project_id ?? "-"}
+                    </td>
                     <td className="px-4 py-3">{run.error_message ?? "-"}</td>
                   </tr>
                 ))

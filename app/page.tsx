@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 
 type SpecState = {
   rawIdea: string;
@@ -91,6 +92,12 @@ export default function HomePage() {
             Convierte una idea de software en una primera especificación técnica
             utilizando un pipeline mínimo de múltiples agentes.
             </p>
+            <Link
+              href="/runs"
+              className="text-blue-500 hover:text-blue-700"
+            >
+              Ver historial de ejecuciones
+            </Link>
         </header>
 
         <section className="rounded-lg border bg-white p-6 shadow-sm">
@@ -166,8 +173,8 @@ export default function HomePage() {
             />
 
             <section className="rounded-lg border bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold mb-3">Markdown Export</h2>
-              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-sm">
+              <h2 className="text-lg font-semibold mb-3 text-black">Markdown Export</h2>
+              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-sm text-gray-800">
                 {result.markdown}
               </pre>
             </section>
