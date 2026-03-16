@@ -19,10 +19,10 @@ El objetivo es facilitar la transición entre **idea → especificación técnic
 # Demo
 
 **Aplicación desplegada:**  
-(agregar URL)
+
 
 **Repositorio:**  
-(agregar URL)
+
 
 ---
 
@@ -128,7 +128,7 @@ Este modelo crea un **pipeline determinista y trazable**, evitando interacciones
 
 ---
 
-# Tool Layer (MCP-like)
+# Tool Layer (Inspirada en MCP)
 
 El sistema incluye una capa de herramientas reutilizables inspirada en patrones MCP.
 
