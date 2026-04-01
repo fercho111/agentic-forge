@@ -1,7 +1,22 @@
 import Link from "next/link";
-import { sql } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+type AgentRunRow = {
+  id: string;
+  project_id: string | null;
+  agent_name: string;
+  status: string;
+  started_at: string;
+  ended_at: string | null;
+  duration_ms: number | null;
+  error_message: string | null;
+  projects: {
+    project_title: string | null;
+  } | null;
+};
 
 type AgentRun = {
   id: string;
@@ -16,28 +31,57 @@ type AgentRun = {
 };
 
 async function getRuns(): Promise<AgentRun[]> {
-  const runs = await sql`
-    SELECT
-      ar.id,
-      ar.project_id,
-      p.project_title,
-      ar.agent_name,
-      ar.status,
-      ar.started_at,
-      ar.ended_at,
-      ar.duration_ms,
-      ar.error_message
-    FROM agent_runs ar
-    LEFT JOIN projects p
-      ON ar.project_id = p.id
-    ORDER BY ar.started_at DESC
-    LIMIT 50;
-  `;
+  const supabase = await createClient();
 
-  return runs as AgentRun[];
+  const { data, error } = await supabase
+    .from("agent_runs")
+    .select(`
+      id,
+      project_id,
+      agent_name,
+      status,
+      started_at,
+      ended_at,
+      duration_ms,
+      error_message,
+      projects (
+        project_title
+      )
+    `)
+    .order("started_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    throw new Error(`Failed to fetch agent runs: ${error.message}`);
+  }
+
+  const rows = (data ?? []) as unknown as AgentRunRow[];
+
+  return rows.map((row) => ({
+    id: row.id,
+    project_id: row.project_id,
+    project_title: row.projects?.project_title ?? null,
+    agent_name: row.agent_name,
+    status: row.status,
+    started_at: row.started_at,
+    ended_at: row.ended_at,
+    duration_ms: row.duration_ms,
+    error_message: row.error_message,
+  }));
 }
 
 export default async function RunsPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    redirect("/login");
+  }
+
   const runs = await getRuns();
 
   return (
@@ -47,7 +91,8 @@ export default async function RunsPage() {
           <div>
             <h1 className="text-3xl font-bold text-black">Agent Runs</h1>
             <p className="text-gray-600">
-              Observabilidad del pipeline de agentes: revisa el historial de ejecuciones, errores y resultados.
+              Observabilidad del pipeline de agentes: revisa el historial de
+              ejecuciones, errores y resultados.
             </p>
           </div>
           <Link
@@ -80,10 +125,12 @@ export default async function RunsPage() {
                       {new Date(run.started_at).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                        {run.duration_ms != null ? (run.duration_ms / 1000).toFixed(2) : "-"}
+                      {run.duration_ms != null
+                        ? (run.duration_ms / 1000).toFixed(2)
+                        : "-"}
                     </td>
                     <td className="px-4 py-3">
-                    {run.project_title ?? run.project_id ?? "-"}
+                      {run.project_title ?? run.project_id ?? "-"}
                     </td>
                     <td className="px-4 py-3">{run.error_message ?? "-"}</td>
                   </tr>
