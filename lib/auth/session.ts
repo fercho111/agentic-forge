@@ -20,7 +20,7 @@ export function getSessionExpiry(from = new Date()) {
 }
 
 export function isIdleTimedOut(lastSeenAt: Date, now = new Date()) {
-  const idleMs = 10 * 1000; // 10 seconds for testing
+  const idleMs = SESSION_IDLE_MINUTES * 60 * 1000;
   return now.getTime() - lastSeenAt.getTime() > idleMs;
 }
 
