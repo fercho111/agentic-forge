@@ -1,23 +1,49 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
-import { loginAction } from "../actions";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const initialState = {
-  error: undefined,
-  success: undefined,
-};
-
 export default function LoginPage() {
-  const [state, formAction, pending] = useActionState(loginAction, initialState);
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.get("email"),
+          password: formData.get("password"),
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.message ?? "No fue posible iniciar sesión");
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error inesperado");
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function handleGoogleLogin() {
     const supabase = createClient();
-
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -35,7 +61,7 @@ export default function LoginPage() {
           Accede a Agentic Forge con tu cuenta.
         </p>
 
-        <form action={formAction} className="mt-6 space-y-4">
+        <form onSubmit={handleLogin} className="mt-6 space-y-4">
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Correo
@@ -60,9 +86,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {state?.error ? (
-            <p className="text-sm text-red-600">{state.error}</p>
-          ) : null}
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
           <button
             type="submit"

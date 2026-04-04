@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAppSessionForPage } from "@/lib/auth/require-app-session";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +30,8 @@ type AgentRun = {
   error_message: string | null;
 };
 
-async function getRuns(): Promise<AgentRun[]> {
-  const supabase = await createClient();
+async function getRuns(userId: string): Promise<AgentRun[]> {
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("agent_runs")
@@ -48,6 +48,7 @@ async function getRuns(): Promise<AgentRun[]> {
         project_title
       )
     `)
+    .eq("user_id", userId)
     .order("started_at", { ascending: false })
     .limit(50);
 
@@ -71,18 +72,8 @@ async function getRuns(): Promise<AgentRun[]> {
 }
 
 export default async function RunsPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    redirect("/login");
-  }
-
-  const runs = await getRuns();
+  const session = await requireAppSessionForPage();
+  const runs = await getRuns(session.user_id);
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">

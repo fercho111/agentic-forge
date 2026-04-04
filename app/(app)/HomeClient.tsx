@@ -3,7 +3,6 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 type SpecState = {
   rawIdea: string;
@@ -56,8 +55,6 @@ export default function HomeClient({
   userEmail: string | null;
 }) {
   const router = useRouter();
-  const supabase = createClient();
-
   const [idea, setIdea] = useState("");
   const [loading, setLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -97,7 +94,7 @@ export default function HomeClient({
     setLoggingOut(true);
 
     try {
-      await supabase.auth.signOut();
+      await fetch("/api/auth/logout", { method: "POST" });
       router.push("/login");
       router.refresh();
     } finally {

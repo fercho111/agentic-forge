@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAppSession } from "@/lib/auth/require-app-session";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type CreateProjectInput = {
   rawIdea: string;
@@ -38,18 +39,10 @@ function asAgentRunRecord(row: unknown): AgentRunRecord {
 }
 
 async function requireAuthenticatedUserId() {
-  const supabase = await createClient();
+  const session = await requireAppSession();
+  const supabase = createAdminClient();
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    throw new Error("Unauthorized: no authenticated user");
-  }
-
-  return { supabase, userId: user.id };
+  return { supabase, userId: session.user_id };
 }
 
 export async function createProject(
@@ -66,7 +59,8 @@ export async function createProject(
       final_json: input.finalJson,
       markdown_output: input.markdownOutput ?? null,
     })
-    .select(`
+    .select(
+      `
       id,
       user_id,
       raw_idea,
@@ -74,7 +68,8 @@ export async function createProject(
       final_json,
       markdown_output,
       created_at
-    `)
+    `
+    )
     .single();
 
   if (error || !data) {
@@ -99,7 +94,8 @@ export async function logAgentRunStart(params: {
       agent_name: params.agentName,
       status: params.status ?? "running",
     })
-    .select(`
+    .select(
+      `
       id,
       user_id,
       project_id,
@@ -109,7 +105,8 @@ export async function logAgentRunStart(params: {
       ended_at,
       duration_ms,
       error_message
-    `)
+    `
+    )
     .single();
 
   if (error || !data) {
@@ -141,6 +138,7 @@ export async function logAgentRunEnd(params: {
     `
     )
     .eq("id", params.runId)
+    .eq("user_id", userId)
     .single();
 
   if (fetchError || !existingRun) {
@@ -160,6 +158,7 @@ export async function logAgentRunEnd(params: {
       error_message: params.errorMessage ?? null,
     })
     .eq("id", params.runId)
+    .eq("user_id", userId)
     .select(
       `
       id,
@@ -187,7 +186,7 @@ export async function updateProject(params: {
   finalJson: unknown;
   markdownOutput?: string;
 }): Promise<ProjectRecord> {
-  const supabase = await createClient();
+  const { supabase, userId } = await requireAuthenticatedUserId();
 
   const { data, error } = await supabase
     .from("projects")
@@ -197,6 +196,7 @@ export async function updateProject(params: {
       markdown_output: params.markdownOutput ?? null,
     })
     .eq("id", params.projectId)
+    .eq("user_id", userId)
     .select(
       `
       id,

@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runAnalysisPipeline } from "@/lib/agents/orchestrator";
-import { createClient } from "@/lib/supabase/server";
+import { requireAppSessionForApi } from "@/lib/auth/require-app-session";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { ok: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+    const auth = await requireAppSessionForApi(request);
+    if ("response" in auth) {
+      return auth.response;
     }
 
     const body = await request.json();

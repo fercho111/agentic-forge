@@ -1,18 +1,12 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAppSessionForPage } from "@/lib/auth/require-app-session";
+import { createAdminClient } from "@/lib/supabase/admin";
 import HomeClient from "./HomeClient";
 
 export default async function HomePage() {
-  const supabase = await createClient();
+  const session = await requireAppSessionForPage();
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const admin = createAdminClient();
+  const { data } = await admin.auth.admin.getUserById(session.user_id);
 
-  if (error || !user) {
-    redirect("/login");
-  }
-
-  return <HomeClient userEmail={user.email ?? null} />;
+  return <HomeClient userEmail={data.user?.email ?? null} />;
 }
