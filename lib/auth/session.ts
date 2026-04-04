@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
 export const SID_COOKIE_NAME = "sid";
 export const SESSION_ABSOLUTE_DAYS = 7;
@@ -19,21 +20,21 @@ export function getSessionExpiry(from = new Date()) {
 }
 
 export function isIdleTimedOut(lastSeenAt: Date, now = new Date()) {
-  const idleMs = SESSION_IDLE_MINUTES * 60 * 1000;
+  const idleMs = 10 * 1000; // 10 seconds for testing
   return now.getTime() - lastSeenAt.getTime() > idleMs;
 }
 
-export function sidCookieOptions(expires: Date) {
+export function sidCookieOptions(expires?: Date): Partial<ResponseCookie> {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax", // literal type, not generic string
     path: "/",
-    expires,
+    ...(expires ? { expires } : {}),
   };
 }
 
-export function expiredSidCookieOptions() {
+export function expiredSidCookieOptions(): Partial<ResponseCookie> {
   return sidCookieOptions(new Date(0));
 }
 
