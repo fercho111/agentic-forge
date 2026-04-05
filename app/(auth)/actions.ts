@@ -135,7 +135,7 @@ export async function resetPasswordAction(
     return { error: error.message };
   }
 
-  redirect("/");
+  redirect("/auth/reset-complete");
 }
 
 export async function logoutAction() {

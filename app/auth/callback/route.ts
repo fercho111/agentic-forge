@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createIdentityClient } from "@/lib/supabase/identity";
-import { issueAppSession } from "@/lib/auth/create-app-session";
+import { createClient } from "@/lib/supabase/server";
+
+const RESET_FLOW_COOKIE = "reset_password_flow";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") ?? "/";
 
-  if (!code) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (code) {
+    const supabase = await createClient();
+    await supabase.auth.exchangeCodeForSession(code);
   }
 
-  const identity = createIdentityClient();
-  const { data, error } = await identity.auth.exchangeCodeForSession(code);
+  const redirectUrl = new URL(next, request.url);
+  const response = NextResponse.redirect(redirectUrl);
 
-  if (error || !data.user) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (next === "/reset-password") {
+    response.cookies.set({
+      name: RESET_FLOW_COOKIE,
+      value: "1",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 15,
+    });
   }
-
-  const response = NextResponse.redirect(new URL(next, request.url));
-  await issueAppSession({ userId: data.user.id, request, response });
 
   return response;
 }
