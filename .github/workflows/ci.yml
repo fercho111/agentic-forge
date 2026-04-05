@@ -30,8 +30,12 @@ jobs:
       - name: Run root tests
         run: npm run test
 
-      - name: Build root app
+      - name: Build
         run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          
 
   mcp-server-ci:
     name: MCP Server CI
