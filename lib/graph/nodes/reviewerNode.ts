@@ -1,6 +1,7 @@
 import type { GraphRuntime } from "@/lib/runtime/types";
 import type { SpecGraphState } from "../state";
 import { createNodeWrapper } from "../utils/nodeWrapper";
+import { loadSkill } from "@/lib/skills/load-skill";
 
 type ReviewerOutput = {
   openQuestions: string[];
@@ -17,13 +18,16 @@ export function createReviewerNode(runtime: GraphRuntime) {
       maxRetries: 1,
     },
     async (state: SpecGraphState): Promise<Partial<SpecGraphState>> => {
+      const reviewerSkill = await loadSkill("spec-review");
+
       const result = await runtime.llm.generateStructured<ReviewerOutput>({
         model: "deepseek-chat",
         systemPrompt: `
 You are the Reviewer Agent in a multi-agent software specification workflow.
-Your job is to assess the current specification for missing clarity, missing scope boundaries, and implementation ambiguity.
 
-If the specification is too incomplete, request one rework cycle.
+You have access to the following reusable skill. Follow it as the authoritative review procedure for this step.
+
+${reviewerSkill}
 
 Return valid JSON only.
         `.trim(),
