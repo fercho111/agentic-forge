@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import type {
   AgentRunRecord,
   AgentStepRecord,
@@ -6,6 +5,8 @@ import type {
   ProjectRecord,
   RateLimitResult,
 } from "@/lib/runtime/types";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAppSessionFromCookies } from "@/lib/auth/get-app-session";
 
 function asProjectRecord(row: unknown): ProjectRecord {
   return row as ProjectRecord;
@@ -19,25 +20,26 @@ function asAgentStepRecord(row: unknown): AgentStepRecord {
   return row as AgentStepRecord;
 }
 
-async function requireAuthenticatedUserId() {
-  const supabase = await createClient();
+async function requireAppSessionContext() {
+  const session = await getAppSessionFromCookies();
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    throw new Error("Unauthorized: no authenticated user");
+  if (!session) {
+    throw new Error("Unauthorized: no active app session");
   }
 
-  return { supabase, userId: user.id };
+  const supabase = createAdminClient();
+
+  return {
+    supabase,
+    userId: session.user_id,
+    session,
+  };
 }
 
 export async function createProject(
   input: CreateProjectInput
 ): Promise<ProjectRecord> {
-  const { supabase, userId } = await requireAuthenticatedUserId();
+  const { supabase, userId } = await requireAppSessionContext();
 
   const { data, error } = await supabase
     .from("projects")
@@ -74,7 +76,7 @@ export async function updateProject(params: {
   finalJson: unknown;
   markdownOutput?: string;
 }): Promise<ProjectRecord> {
-  const { supabase } = await requireAuthenticatedUserId();
+  const { supabase } = await requireAppSessionContext();
 
   const { data, error } = await supabase
     .from("projects")
@@ -109,7 +111,7 @@ export async function logAgentRunStart(params: {
   agentName: string;
   status?: string;
 }): Promise<AgentRunRecord> {
-  const { supabase, userId } = await requireAuthenticatedUserId();
+  const { supabase, userId } = await requireAppSessionContext();
 
   const { data, error } = await supabase
     .from("agent_runs")
@@ -146,7 +148,7 @@ export async function logAgentRunEnd(params: {
   status: "success" | "failed";
   errorMessage?: string | null;
 }): Promise<AgentRunRecord> {
-  const { supabase } = await requireAuthenticatedUserId();
+  const { supabase } = await requireAppSessionContext();
 
   const { data: existingRun, error: fetchError } = await supabase
     .from("agent_runs")
@@ -213,7 +215,7 @@ export async function logAgentStepStart(params: {
   inputSnapshot?: unknown;
   traceName?: string | null;
 }): Promise<AgentStepRecord> {
-  const { supabase, userId } = await requireAuthenticatedUserId();
+  const { supabase, userId } = await requireAppSessionContext ();
 
   const { data, error } = await supabase
     .from("agent_steps")
@@ -261,7 +263,7 @@ export async function logAgentStepEnd(params: {
   outputSnapshot?: unknown;
   errorMessage?: string | null;
 }): Promise<AgentStepRecord> {
-  const { supabase } = await requireAuthenticatedUserId();
+  const { supabase } = await requireAppSessionContext ();
 
   const { data: existingStep, error: fetchError } = await supabase
     .from("agent_steps")
@@ -326,7 +328,7 @@ export async function checkAnalyzeRateLimit(params: {
   limit: number;
   windowSeconds: number;
 }): Promise<RateLimitResult> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase.rpc("check_and_increment_rate_limit", {
     p_user_id: params.userId,
