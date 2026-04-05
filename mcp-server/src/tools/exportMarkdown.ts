@@ -1,4 +1,4 @@
-import { exportMarkdownInputSchema, type ExportMarkdownInput } from "../schemas/exportMarkdown";
+import { exportMarkdownInputSchema, type ExportMarkdownInput } from "../schemas/exportMarkdown.js";
 
 function renderList(items?: string[]) {
   if (!items || items.length === 0) {
