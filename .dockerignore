@@ -1,0 +1,14 @@
+node_modules
+.next
+coverage
+dist
+.git
+.github
+.env
+.env.local
+.env.*.local
+npm-debug.log
+Dockerfile*
+docker-compose*
+mcp-server/node_modules
+mcp-server/dist

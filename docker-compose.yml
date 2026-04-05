@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  next-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+        LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+        LANGSMITH_TRACING: ${LANGSMITH_TRACING}
+        LANGSMITH_PROJECT: ${LANGSMITH_PROJECT}
+        LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+        SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+        MCP_SERVER_URL: http://mcp-server:8080
+        MCP_SHARED_SECRET: ${MCP_SHARED_SECRET}
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT}
+      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT}
+      MCP_SERVER_URL: http://mcp-server:8080
+      MCP_SHARED_SECRET: ${MCP_SHARED_SECRET}
+
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    container_name: agentic-forge-mcp
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      MCP_SHARED_SECRET: ${MCP_SHARED_SECRET}
+      MCP_ALLOWED_ORIGIN: http://localhost:3000
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}

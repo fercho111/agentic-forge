@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { SubmitEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+  async function handleLogin(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
     setError(null);
@@ -41,17 +40,17 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogleLogin() {
-    const supabase = createClient();
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  // async function handleGoogleLogin() {
+  //   const supabase = createClient();
+  //   const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${origin}/auth/callback?next=/`,
-      },
-    });
-  }
+  //   await supabase.auth.signInWithOAuth({
+  //     provider: "google",
+  //     options: {
+  //       redirectTo: `${origin}/auth/callback?next=/`,
+  //     },
+  //   });
+  // }
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
@@ -97,12 +96,12 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <button
+        {/* <button
           onClick={handleGoogleLogin}
           className="mt-4 w-full rounded-md border px-4 py-2 text-sm text-gray-700"
         >
           Continuar con Google
-        </button>
+        </button> */}
 
         <div className="mt-4 flex justify-between text-sm">
           <Link href="/forgot-password" className="text-blue-600">
