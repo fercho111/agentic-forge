@@ -1,6 +1,6 @@
 import type { GraphRuntime, LLMRuntime, LLMStructuredRequest } from "./types";
 import { generateJson } from "@/lib/llm/generateJson";
-import { localToolExecutor } from "./local-tool-executor";
+import { mcpToolExecutor } from "@/lib/mcp/tool-executor";
 
 const llmRuntime: LLMRuntime = {
   async generateStructured<T>(input: LLMStructuredRequest): Promise<T> {
@@ -14,5 +14,5 @@ const llmRuntime: LLMRuntime = {
 
 export const localGraphRuntime: GraphRuntime = {
   llm: llmRuntime,
-  tools: localToolExecutor,
+  tools: mcpToolExecutor,
 };

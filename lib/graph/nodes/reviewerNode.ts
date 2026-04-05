@@ -13,12 +13,12 @@ export function createReviewerNode(runtime: GraphRuntime) {
     runtime,
     {
       agentName: "reviewer-agent",
-      modelName: "deepseek-reasoner",
+      modelName: "deepseek-chat",
       maxRetries: 1,
     },
     async (state: SpecGraphState): Promise<Partial<SpecGraphState>> => {
       const result = await runtime.llm.generateStructured<ReviewerOutput>({
-        model: "deepseek-reasoner",
+        model: "deepseek-chat",
         systemPrompt: `
 You are the Reviewer Agent in a multi-agent software specification workflow.
 Your job is to assess the current specification for missing clarity, missing scope boundaries, and implementation ambiguity.
