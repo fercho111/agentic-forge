@@ -1,8 +1,8 @@
 # Agentic Forge AI
 
-Agentic Forge AI es una aplicación web que transforma ideas iniciales de software en una **primera especificación técnica estructurada** mediante un pipeline de **agentes especializados**.
+Agentic Forge AI es una aplicación web que transforma ideas iniciales de software en una **primera especificación técnica estructurada** mediante un sistema de **agentes especializados**.
 
-El sistema toma una descripción informal de un proyecto y genera automáticamente:
+A partir de una descripción informal, la plataforma genera automáticamente:
 
 - resumen del problema
 - usuarios objetivo
@@ -12,301 +12,302 @@ El sistema toma una descripción informal de un proyecto y genera automáticamen
 - entidades de datos
 - preguntas abiertas de implementación
 
-El objetivo es facilitar la transición entre **idea → especificación técnica**, especialmente para fundadores, freelancers y pequeños equipos que necesitan estructurar rápidamente un proyecto antes de iniciar desarrollo.
+El objetivo es reducir ambigüedad en etapas tempranas y facilitar la transición entre **idea → especificación técnica**, especialmente para founders, freelancers y equipos pequeños.
 
 ---
 
 # Demo
 
 **Aplicación desplegada:**  
-(agregar URL)
+https://agentic-forge-psi.vercel.app
+
+**Servidor MCP desplegado:**  
+https://agentic-forge.onrender.com
 
 **Repositorio:**  
-(agregar URL)
+https://github.com/fercho111/agentic-forge
 
 ---
 
-# Problema que resuelve
+# Enfoque del proyecto
 
-En etapas tempranas de desarrollo es común que los requerimientos se expresen como ideas vagas o incompletas. Esto suele provocar:
+La primera versión validó la idea del producto.  
+Esta segunda iteración reforzó la arquitectura para acercarla más a un entorno real de agentic engineering.
 
-- mala estimación técnica
-- retrabajo en desarrollo
-- comunicación deficiente entre stakeholders
-- pérdida de tiempo refinando requisitos
+El proyecto ahora incorpora:
 
-Agentic Forge AI aborda este problema utilizando un **pipeline multi-agente** que convierte una idea inicial en un documento estructurado que puede servir como base para diseño o planificación técnica.
+- autenticación real con gestión de sesiones
+- orquestación multi-agente con **LangGraph**
+- tool layer con **MCP Server** real
+- integración de un **SKILL.md** reutilizable
+- persistencia intermedia de ejecuciones
+- observabilidad con **LangSmith**, Supabase y logs de infraestructura
+- testing y CI para el flujo principal
 
 ---
 
 # Arquitectura general
 
-La aplicación sigue una arquitectura simple pero modular:
+La solución se divide en dos servicios principales:
 
-```
+```text
 Usuario
    │
    ▼
-Frontend (Next.js)
+Next.js App (Vercel)
+   │
+   ├── Auth / sesiones
+   ├── UI
+   ├── API / LangGraph
    │
    ▼
-API Route (/api/analyze)
+MCP Server (Render)
    │
    ▼
-Orchestrator
-   │
-   ▼
-Pipeline de agentes especializados
-   │
-   ▼
-Tool layer (persistencia / export)
-   │
-   ▼
-Neon Postgres
+Supabase
 ```
 
-Tecnologías principales:
+--- 
 
-- **Next.js (App Router)** – frontend y backend
-- **TypeScript**
-- **Neon Postgres**
-- **DeepSeek API**
-- **LangSmith**
-- **Vercel**
-- **GitHub Actions**
+# Tecnologías principales:
+
+- Next.js (App Router) – frontend y backend
+- TypeScript
+- Supabase – auth, sesiones y persistencia
+- DeepSeek API
+- LangGraph
+- LangSmith
+- MCP Server remoto
+- Vercel
+- Render
+- GitHub Actions
+- Docker / Docker Compose
 
 ---
 
-# Arquitectura de Agentes
+# Arquitectura de agentes
 
-El sistema implementa un **pipeline multi-agente basado en roles**, cumpliendo con la categoría:
+El sistema conserva el flujo base de cuatro agentes, pero ahora está orquestado con LangGraph en lugar de un pipeline secuencial custom.
 
-**“Ecosistema de agentes, roles y protocolo agent-to-agent”.**
+## Intake Agent
 
-Cada agente tiene una responsabilidad clara dentro del flujo.
-
-### Intake Agent
-Interpreta la idea inicial del usuario y extrae:
+Interpreta la idea inicial y extrae:
 
 - título del proyecto
 - resumen del problema
 - usuarios objetivo
 
-### Product Agent
-Genera elementos de producto:
+## Product Agent
+
+Genera:
 
 - requerimientos funcionales
 - historias de usuario
+## Technical Agent
 
-### Technical Agent
-Propone una base técnica:
+Propone:
 
-- stack sugerido
-- módulos principales
-- entidades de datos
+- enfoque técnico inicial
+- entidades principales de datos
+## Reviewer Agent
 
-### Reviewer Agent
-Analiza el resultado final e identifica:
+Revisa el resultado y detecta:
 
 - ambigüedades
 - preguntas abiertas
-- posibles riesgos de implementación
+- necesidad de rework cuando aplica
+
+LangGraph aporta manejo explícito de estado, routing condicional, retries y mejor trazabilidad entre pasos.
 
 ---
 
-# Protocolo Agent-to-Agent
+# Tool Layer con MCP
 
-Los agentes se coordinan mediante un **contrato de estado tipado (`SpecState`)**.
+La capa de tools fue migrada a un MCP Server real.
 
-Cada agente:
+Actualmente el sistema utiliza tools expuestas vía protocolo MCP, en lugar de invocaciones directas, para tareas como:
 
-1. recibe el estado actual
-2. lo enriquece con nueva información
-3. devuelve el estado actualizado
+- exportación de especificaciones en Markdown
+- actualización de proyecto final
+- registro de pasos intermedios de agentes
 
-Este modelo crea un **pipeline determinista y trazable**, evitando interacciones caóticas entre agentes y facilitando debugging y observabilidad.
-
----
-
-# Tool Layer (MCP-like)
-
-El sistema incluye una capa de herramientas reutilizables inspirada en patrones MCP.
-
-Las herramientas actuales incluyen:
-
-- **Persistence Tool**  
-  Registro de proyectos y ejecuciones del pipeline.
-
-- **Export Tool**  
-  Generación del documento final en formato Markdown.
-
-Esta capa desacopla a los agentes de la infraestructura y permite extender el sistema con nuevas herramientas fácilmente.
+El MCP server está desplegado de forma independiente y protegido mediante autenticación interna y validación de origen.
 
 ---
 
-# Observabilidad de agentes
+# Skill reutilizable
 
-El sistema implementa **dos niveles de observabilidad**.
+El proyecto incorpora un skill real en:
 
-### Observabilidad interna (Postgres)
+`skills/spec-review/SKILL.md`
 
-La tabla `agent_runs` registra:
+Este skill estandariza la revisión de especificaciones generadas y se integra en el Reviewer Agent para mantener consistencia en criterios de claridad, alcance y necesidad de rework.
 
-- agente ejecutado
-- estado (success / failed)
-- timestamps
-- duración
-- error si ocurre
-
-La página `/runs` permite visualizar el historial de ejecuciones del pipeline.
 
 ---
 
-### Observabilidad de LLM y agentes (LangSmith)
+# Autenticación y sesiones
+La aplicación dejó atrás el password gate inicial y ahora usa un flujo de autenticación real con:
 
-Se integró **LangSmith** para tracing del sistema agentic.
+-registro e inicio de sesión
+-recuperación segura de contraseña por email
+-sesiones server-side con cookie opaca
+-expiración por inactividad
+-invalidación de sesión al cerrar sesión
+-protección de rutas basada en sesión autenticada
 
-Cada ejecución genera un trace con:
-
-- ejecución completa del pipeline
-- pasos por agente
-- llamadas al modelo
-- latencias y errores
-
-Esto permite depurar el comportamiento del pipeline y analizar el desempeño de cada agente.
+La validación de inputs se apoya en Zod y el flujo de reset password fue endurecido para evitar accesos directos no válidos a la ruta de cambio de contraseña.
 
 ---
 
-# DevOps / AgenticOps
+# Observabilidad y persistencia
 
-El proyecto implementa prácticas básicas de operaciones:
+La observabilidad se implementa en varios niveles.
 
-### CI/CD
+## Supabase
 
-Pipeline en **GitHub Actions** que ejecuta:
+Se persisten:
+
+proyectos
+sesiones de aplicación
+agent runs
+agent steps
+
+La tabla agent_steps guarda información intermedia por agente, incluyendo snapshots de input/output, retries, errores y duración.
+
+## LangSmith
+
+Cada ejecución del grafo genera trazas de agentes y llamadas al modelo, lo que facilita debugging y análisis del comportamiento del sistema.
+
+---
+
+# Infraestructura
+
+El despliegue separa la app principal y el MCP server, con logs disponibles en:
+
+Vercel para el servicio principal
+Render para el MCP server
+
+
+---
+
+# Mejoras operativas
+
+Además del rediseño de arquitectura, esta versión incorpora varias mejoras operativas:
+
+- validación de /api/analyze con Zod
+- sanitización básica del input y hardening frente a prompt injection
+- rate limiting por usuario para proteger consumo de API
+- error handling en API routes
+- error boundary global en la aplicación
+- abstracción de runtime para desacoplar LLM y tools
+
+---
+
+# Testing y CI
+
+Se añadieron pruebas automáticas para partes críticas del flujo, incluyendo validación y routing del sistema.
+
+El pipeline de CI en GitHub Actions ejecuta:
 
 - instalación de dependencias
 - lint
-- build
+- tests
+- build del frontend
+- build del MCP server
 
-Esto asegura que el proyecto sea compilable antes de despliegues.
-
-### Despliegue
-
-La aplicación se despliega en **Vercel**, con variables de entorno para:
-
-- DeepSeek API
-- Neon Postgres
-- LangSmith
-
-### Protección de uso de modelo
-
-Se implementó un **password gate con middleware** para evitar uso público no autorizado del endpoint `/api/analyze`.
+Esto permite validar tanto la app principal como el servicio MCP dentro del mismo repositorio.
 
 ---
 
-# Experiencia de usuario
+# Dockerization
+El proyecto incluye configuración de contenedores para facilitar ejecución local y reproducibilidad:
 
-El flujo de uso es simple:
-
-1. El usuario introduce una idea de proyecto
-2. El pipeline multi-agente genera una especificación
-3. El resultado se presenta estructurado
-4. Se puede consultar el historial de ejecuciones en `/runs`
+- Dockerfile para la app Next.js
+- Dockerfile para el MCP server
+- docker-compose.yml para levantar ambos servicios juntos
 
 ---
 
 # Estructura del proyecto
 
-```
+```text
 app/
+  (app)/
+  (auth)/
+  auth/
   api/
-    analyze/
-    unlock/
-  runs/
-  unlock/
 
 lib/
-  agents/
-  tools/
+  analyze/
+  auth/
+  graph/
   llm/
-  db.ts
+  mcp/
+  runtime/
+  skills/
+  supabase/
+  tools/
+
+mcp-server/
+  src/
+
+skills/
+  spec-review/
 
 .github/
   workflows/
     ci.yml
 ```
 
-La estructura separa claramente:
-
-- agentes
-- herramientas
-- integración LLM
-- persistencia
-- interfaz
-
----
-
-# Próximos pasos
-
-Debido al tiempo limitado del reto, algunas mejoras naturales quedarían como extensiones futuras:
-
-### Persistencia completa de resultados de agentes
-Actualmente el pipeline guarda el proyecto final y los logs de ejecución.  
-Un siguiente paso sería almacenar **las respuestas intermedias de cada agente** para permitir:
-
-- debugging detallado
-- comparación de ejecuciones
-- evaluación de agentes
-
-### Evaluación automática de agentes
-Integrar datasets de evaluación con LangSmith para medir calidad de outputs.
-
-### Extensión del Tool Layer
-Convertir las herramientas actuales en un **MCP server completo** para permitir uso directo por agentes.
-
-### Mejora de UX
-Agregar:
-
-- exportación directa a documento
-- historial de proyectos
-- edición manual de especificaciones
-
 ---
 
 # Instalación local
 
-```
-git clone <repo>
+## App principal
+
+```javascript
 npm install
+npm run dev
 ```
+## MCP Server
 
-Variables de entorno necesarias:
-
-```
-DATABASE_URL=
-DEEPSEEK_API_KEY=
-LANGSMITH_API_KEY=
-APP_GATE_PASSWORD=
-APP_GATE_COOKIE=
-```
-
-Ejecutar:
-
-```
+```javascriptcd mcp-server
+cd mcp-server
+npm install
 npm run dev
 ```
 
----
+## Docker Compose
 
-# Conclusión
+```javascript
+docker compose --env-file .env.docker up --build
+```
 
-Agentic Forge AI demuestra una implementación funcional de:
+## Variables de entorno
 
-- **arquitectura multi-agente basada en roles**
-- **protocolo agent-to-agent estructurado**
-- **observabilidad con LangSmith**
-- **pipeline de CI/CD**
-- **aplicación web desplegable**
+### App principal
 
-El proyecto prioriza **claridad arquitectónica, trazabilidad y despliegue funcional**, manteniendo el alcance adecuado para un sistema agentic evaluable en un entorno real.
+```bash
+NEXT_PUBLIC_SITE_URL=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+DEEPSEEK_API_KEY=
+LANGSMITH_API_KEY=
+LANGSMITH_TRACING=
+LANGSMITH_PROJECT=
+LANGSMITH_ENDPOINT=
+MCP_SERVER_URL=
+MCP_SHARED_SECRET=
+```
+
+### MCP Server
+
+```bash
+PORT=
+MCP_SHARED_SECRET=
+MCP_ALLOWED_ORIGIN=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+```
