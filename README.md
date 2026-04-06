@@ -1,5 +1,5 @@
 # Agentic Forge AI
-
+test
 Agentic Forge AI es una aplicación web que transforma ideas iniciales de software en una **primera especificación técnica estructurada** mediante un sistema de **agentes especializados**.
 
 A partir de una descripción informal, la plataforma genera automáticamente:
