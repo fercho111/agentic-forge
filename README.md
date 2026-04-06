@@ -185,8 +185,8 @@ Cada ejecución del grafo genera trazas de agentes y llamadas al modelo, lo que 
 
 El despliegue separa la app principal y el MCP server, con logs disponibles en:
 
-Vercel para el servicio principal
-Render para el MCP server
+- Vercel para el servicio principal
+- Render para el MCP server
 
 
 ---
