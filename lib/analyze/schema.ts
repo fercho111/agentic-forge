@@ -31,13 +31,13 @@ export const analyzeIdeaSchema = z.object({
     .refine((value) => value.length <= 4000, {
       message: "Idea must be at most 4000 characters long",
     })
-    // .refine(
-    //   (value) => !suspiciousPatterns.some((pattern) => pattern.test(value)),
-    //   {
-    //     message:
-    //       "Input appears to contain instruction-like content unrelated to the project idea",
-    //   }
-    // ),
+    .refine(
+      (value) => !suspiciousPatterns.some((pattern) => pattern.test(value)),
+      {
+        message:
+          "Input appears to contain instruction-like content unrelated to the project idea",
+      }
+    ),
 });
 
 export type AnalyzeIdeaInput = z.infer<typeof analyzeIdeaSchema>;
